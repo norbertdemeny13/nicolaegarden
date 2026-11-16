@@ -1,0 +1,266 @@
+(function () {
+  const C = window.CATALOG;
+
+  const NOTES = {
+    "pomi-fructiferi": "Măr, păr, prun, cireș, vișin, cais, nectarin, gutui și nuc.",
+    "arbusti-fructiferi": "Arbuști pentru fructe de grădină.",
+    "trandafiri": "Pitici, teahibrid, urcători și pomișor.",
+    "plante-ornamentale": "Arbuști decorativi și plante perene.",
+    "flori-de-sezon": "Flori de primăvară, vară și toamnă.",
+    "brazi-si-conifere": "Brazi, tuia și alte conifere.",
+  };
+
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const queryParams = () => new URLSearchParams(location.search);
+
+  function esc(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    }[ch]));
+  }
+
+  function fold(value) {
+    return String(value || "")
+      .toLowerCase()
+      .replaceAll("ă", "a")
+      .replaceAll("â", "a")
+      .replaceAll("î", "i")
+      .replaceAll("ș", "s")
+      .replaceAll("ş", "s")
+      .replaceAll("ț", "t")
+      .replaceAll("ţ", "t");
+  }
+
+  function catById(id) {
+    return C.categories.find((cat) => cat.id === id);
+  }
+
+  function catBySlug(slug) {
+    return C.categories.find((cat) => cat.slug === slug);
+  }
+
+  function childrenOf(id) {
+    return C.categories.filter((cat) => cat.parent === id);
+  }
+
+  function topOf(cat) {
+    if (!cat || !cat.parent) return cat;
+    return catById(cat.parent) || cat;
+  }
+
+  function inCategory(product, cat) {
+    if (!cat) return true;
+    if (cat.parent) return product.categories.includes(cat.id);
+    const ids = new Set([cat.id, ...childrenOf(cat.id).map((child) => child.id)]);
+    return product.categories.some((id) => ids.has(id));
+  }
+
+  function countFor(cat) {
+    return C.products.filter((product) => inCategory(product, cat)).length;
+  }
+
+  function labelFor(product) {
+    const cats = product.categories.map(catById).filter(Boolean);
+    return cats.find((cat) => cat.parent) || cats[0];
+  }
+
+  function plantCard(product) {
+    const cat = labelFor(product);
+    return `<a class="pcard" href="produs.html?p=${encodeURIComponent(product.slug)}">
+      <img src="${esc(product.image)}" alt="${esc(product.title)}">
+      <strong>${esc(product.title)}</strong>
+      <span class="bar">${esc(cat ? cat.name : "Detalii")}</span>
+    </a>`;
+  }
+
+  function setupNav() {
+    const button = $(".nav-toggle");
+    const nav = $("#nav");
+    if (!button || !nav) return;
+    button.addEventListener("click", () => {
+      const open = nav.classList.toggle("is-open");
+      button.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  }
+
+  function renderHome() {
+    const cats = $("#category-grid");
+    if (cats) {
+      const tops = C.categoryOrder.map(catBySlug).filter(Boolean);
+      cats.innerHTML = tops.map((cat, index) => {
+        const count = countFor(cat);
+        return `<a class="cat" href="catalog.html?c=${encodeURIComponent(cat.slug)}">
+          <span class="cat-index">${String(index + 1).padStart(2, "0")}</span>
+          <span class="cat-name">${esc(cat.name)}</span>
+          <span class="cat-note">${count} plante · ${esc(NOTES[cat.slug] || "")}</span>
+        </a>`;
+      }).join("");
+    }
+    const featured = $("#featured-grid");
+    if (featured) {
+      const byId = new Map(C.products.map((product) => [product.id, product]));
+      featured.innerHTML = C.featured.map((id) => byId.get(id)).filter(Boolean).map(plantCard).join("");
+    }
+  }
+
+  function matchesQuery(product, query) {
+    if (!query) return true;
+    const hay = fold(`${product.title} ${product.text}`);
+    return fold(query).split(/\s+/).every((word) => word && hay.includes(word));
+  }
+
+  function renderCatalog() {
+    const grid = $("#catalog-grid");
+    if (!grid) return;
+    const params = queryParams();
+    const selected = catBySlug(params.get("c") || "");
+    const parent = topOf(selected);
+    const query = params.get("q") || "";
+    const tops = C.categoryOrder.map(catBySlug).filter(Boolean);
+
+    const filters = $("#filters");
+    filters.innerHTML = [`<a href="catalog.html${query ? `?q=${encodeURIComponent(query)}` : ""}" class="${selected ? "" : "is-on"}">Toate</a>`]
+      .concat(tops.map((cat) => {
+        const on = parent && parent.id === cat.id;
+        const href = `catalog.html?c=${encodeURIComponent(cat.slug)}${query ? `&q=${encodeURIComponent(query)}` : ""}`;
+        return `<a href="${href}" class="${on ? "is-on" : ""}">${esc(cat.name)} <span>${countFor(cat)}</span></a>`;
+      })).join("");
+
+    const sub = $("#subfilters");
+    const kids = parent ? childrenOf(parent.id).filter((cat) => countFor(cat)) : [];
+    sub.hidden = kids.length === 0;
+    sub.innerHTML = kids.map((cat) => {
+      const href = `catalog.html?c=${encodeURIComponent(cat.slug)}${query ? `&q=${encodeURIComponent(query)}` : ""}`;
+      const on = selected && selected.id === cat.id;
+      return `<a class="chip${on ? " is-on" : ""}" href="${href}">${esc(cat.name)} ${countFor(cat)}</a>`;
+    }).join("");
+
+    const input = $("#search");
+    if (input && input.value !== query) input.value = query;
+
+    const list = C.products.filter((product) => inCategory(product, selected) && matchesQuery(product, query));
+    $("#result-count").textContent = `${list.length} ${list.length === 1 ? "plantă" : "plante"}`;
+    if (!list.length) {
+      grid.innerHTML = "";
+      $("#empty").hidden = false;
+      return;
+    }
+    $("#empty").hidden = true;
+    grid.classList.add("pcard-grid");
+    grid.innerHTML = list.map(plantCard).join("");
+  }
+
+  function bindSearch() {
+    const input = $("#search");
+    if (!input) return;
+    let timer = 0;
+    input.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const next = new URLSearchParams(location.search);
+        const value = input.value.trim();
+        if (value) next.set("q", value);
+        else next.delete("q");
+        const qs = next.toString();
+        history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
+        renderCatalog();
+      }, 120);
+    });
+  }
+
+  function renderProduct() {
+    const root = $("#product");
+    if (!root) return;
+    const slug = queryParams().get("p") || "";
+    const product = C.products.find((item) => item.slug === slug);
+    if (!product) {
+      root.innerHTML = `<div class="empty"><h1>Planta nu este în catalog</h1><p><a href="catalog.html">Înapoi la catalog</a></p></div>`;
+      return;
+    }
+    document.title = `${product.title} · Nicolae Garden`;
+    const cat = labelFor(product);
+    const paragraphs = product.text.split("\n").filter(Boolean).map((line) => `<p>${esc(line)}</p>`).join("");
+    const crumb = cat
+      ? `<a href="catalog.html?c=${encodeURIComponent(cat.slug)}">${esc(cat.name)}</a>`
+      : `<a href="catalog.html">Catalog</a>`;
+    root.innerHTML = `
+      <figure class="product-photo"><img src="${esc(product.image)}" alt="${esc(product.title)}"></figure>
+      <article>
+        <p class="crumb">${crumb}</p>
+        <h1>${esc(product.title)}</h1>
+        <div class="body">${paragraphs}</div>
+        <p class="note">Disponibil în pepinieră. Prețul se stabilește la fața locului, în Sângeorgiu de Mureș, Corunca sau Cristești.</p>
+      </article>`;
+
+    const related = $("#related-grid");
+    if (!related || !cat) return;
+    const same = C.products.filter((item) => item.slug !== product.slug && item.categories.includes(cat.id));
+    const more = C.products.filter((item) => item.slug !== product.slug && !same.includes(item) && inCategory(item, topOf(cat)));
+    const others = same.concat(more).slice(0, 4);
+    related.innerHTML = others.map(plantCard).join("");
+    $("#related").hidden = others.length === 0;
+  }
+
+  function setupHome() {
+    const hero = document.querySelector("#hero-img");
+    document.querySelectorAll("[data-hero]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (hero) {
+          hero.src = button.dataset.hero;
+          hero.alt = button.dataset.alt || "";
+        }
+        document.querySelectorAll("[data-hero]").forEach((item) => item.classList.toggle("is-on", item === button));
+      });
+    });
+
+    document.querySelectorAll("[data-loc]").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-loc]").forEach((item) => item.classList.toggle("is-on", item === button));
+        document.querySelectorAll(".panel").forEach((panel) => {
+          panel.hidden = panel.id !== button.dataset.loc;
+        });
+      });
+    });
+
+    const form = document.querySelector("#contact-form");
+    if (form) {
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const data = new FormData(form);
+        const body = [
+          `Nume: ${data.get("nume") || ""}`,
+          `E-mail: ${data.get("email") || ""}`,
+          `Telefon: ${data.get("telefon") || ""}`,
+          "",
+          data.get("mesaj") || "",
+        ].join("\n");
+        window.location.href = `mailto:gardennicolae@gmail.com?subject=${encodeURIComponent("Mesaj de pe site")}&body=${encodeURIComponent(body)}`;
+      });
+    }
+
+    const xmas = document.querySelector("#xmas");
+    const close = document.querySelector("#xmas-close");
+    if (xmas && sessionStorage.getItem("ng-xmas") === "off") xmas.hidden = true;
+    if (close && xmas) {
+      close.addEventListener("click", () => {
+        xmas.hidden = true;
+        sessionStorage.setItem("ng-xmas", "off");
+      });
+    }
+  }
+
+  setupNav();
+  setupHome();
+  if (!C) return;
+  const page = document.body.dataset.page;
+  if (page === "home") renderHome();
+  if (page === "catalog") {
+    bindSearch();
+    renderCatalog();
+  }
+  if (page === "product") renderProduct();
+})();

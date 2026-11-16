@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Plantă · Nicolae Garden</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body data-page="product">
+  <a class="skip" href="#continut">Sări la conținut</a>
+  <header class="site-header">
+    <a class="brand" href="index.html"><img src="images/logo.png" alt="Nicolae Garden"></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav">Meniu</button>
+    <nav class="nav" id="nav">
+      <a href="index.html#despre">Despre Noi</a>
+      <a href="catalog.html">Produse</a>
+      <a href="index.html#contact">Contact</a>
+    </nav>
+    <a class="phone" href="tel:0741763416" aria-label="Sună la 0741763416">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M7 3.5h3.2l1.2 3.6-2 1.2a12 12 0 0 0 6.3 6.3l1.2-2 3.6 1.2V17a2 2 0 0 1-2 2A14.5 14.5 0 0 1 5 6.5a2 2 0 0 1 2-2z"/></svg>
+    </a>
+  </header>
+  <main id="continut" class="wrap">
+    <div class="product" id="product"></div>
+    <section class="related" id="related" hidden>
+      <h2>Din aceeași grupă</h2>
+      <div class="plant-grid" id="related-grid"></div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap">
+      <p class="legal" style="border:0;margin:0;padding:0"><a href="catalog.html">Înapoi la catalog</a> · Nicolae Garden</p>
+    </div>
+  </footer>
+  <script src="js/catalog.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>
