@@ -206,7 +206,7 @@ button, input, textarea { font: inherit; color: inherit; }
 }
 
 .wrap { width: min(1120px, calc(100% - 2.4rem)); margin: 0 auto; }
-.section { padding: 3.4rem 0; }
+.section { padding: 3.4rem 0; scroll-margin-top: calc(var(--header) + 0.6rem); }
 .block-title { text-align: right; margin-bottom: 1.2rem; }
 .block-title h2 {
   margin: 0;
@@ -260,9 +260,26 @@ button, input, textarea { font: inherit; color: inherit; }
   font-weight: 600;
 }
 
+.about {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+  gap: 2.4rem;
+  align-items: start;
+}
+.about-photo {
+  margin: 0;
+  position: sticky;
+  top: calc(var(--header) + 1.2rem);
+}
+.about-photo img {
+  width: 100%;
+  border-radius: 18px;
+  object-fit: cover;
+  aspect-ratio: 3 / 4;
+}
 .story {
-  max-width: 760px;
-  margin-left: auto;
+  max-width: none;
+  margin-left: 0;
   color: var(--green);
 }
 .story p { margin: 0 0 1rem; }
@@ -462,7 +479,8 @@ label { font-size: 0.92rem; color: var(--muted); }
   .hero-copy { right: 6%; bottom: 28%; }
   .hero-places { flex-direction: row; left: 0.8rem; right: 0.8rem; width: auto; }
   .place { width: 33%; }
-  .trust, .loc-layout, .contact-grid, .foot, .product, .plant-grid, .pcard-grid { grid-template-columns: 1fr; }
+  .trust, .loc-layout, .contact-grid, .foot, .product, .plant-grid, .pcard-grid, .about { grid-template-columns: 1fr; }
+  .about-photo { position: static; max-width: 360px; }
   .story { margin-left: 0; }
   .block-title, .tabs { text-align: left; justify-content: flex-start; }
   .vine { margin-left: 0; }
