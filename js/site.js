@@ -234,7 +234,11 @@
         <p class="crumb">${crumb}</p>
         <h1>${esc(product.title)}</h1>
         <div class="body">${paragraphs}</div>
-        <p class="note">Disponibil în pepinieră. Prețul se stabilește la fața locului, în Sângeorgiu de Mureș, Corunca sau Cristești.</p>
+        <p class="note">Disponibil în pepinieră. Prețul se stabilește la fața locului. Nu vindem online.</p>
+        <p class="product-cta">
+          <a class="btn btn-dark" href="https://wa.me/call/40741763416">Sună pentru disponibilitate</a>
+          <a class="btn btn-lime" href="${asset("locatie/")}">Vezi locația</a>
+        </p>
       </article>`;
     root.querySelectorAll("[data-photo]").forEach((button) => {
       button.addEventListener("click", () => {

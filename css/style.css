@@ -7,7 +7,7 @@
   --paper: #ffffff;
   --sans: "Poppins", "Segoe UI", sans-serif;
   --ui: "Montserrat", "Segoe UI", sans-serif;
-  --header: 92px;
+  --header: 132px;
 }
 
 * { box-sizing: border-box; }
@@ -97,6 +97,23 @@ button, input, textarea { font: inherit; color: inherit; }
   font-size: 1.05rem;
   transition: color 0.25s ease;
 }
+.cat-nav {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 0.9rem;
+}
+.cat-nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-family: var(--ui);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.product-cta { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.loc-list { display: grid; gap: 1.6rem; padding-bottom: 3rem; }
+.loc-list h2 { color: var(--green); margin-bottom: 0.3rem; }
 .nav a::after {
   content: "";
   position: absolute;
