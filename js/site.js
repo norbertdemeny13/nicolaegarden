@@ -152,6 +152,7 @@
     $("#empty").hidden = true;
     grid.classList.add("pcard-grid");
     grid.innerHTML = list.map(plantCard).join("");
+    if (window.revealIn) window.revealIn(grid);
   }
 
   function bindSearch() {
@@ -203,17 +204,21 @@
     const others = same.concat(more).slice(0, 4);
     related.innerHTML = others.map(plantCard).join("");
     $("#related").hidden = others.length === 0;
+    if (window.revealIn) window.revealIn(related);
   }
 
   function setupHome() {
     const hero = document.querySelector("#hero-img");
     document.querySelectorAll("[data-hero]").forEach((button) => {
       button.addEventListener("click", () => {
-        if (hero) {
+        document.querySelectorAll("[data-hero]").forEach((item) => item.classList.toggle("is-on", item === button));
+        if (!hero || hero.getAttribute("src") === button.dataset.hero) return;
+        hero.classList.add("is-fading");
+        window.setTimeout(() => {
           hero.src = button.dataset.hero;
           hero.alt = button.dataset.alt || "";
-        }
-        document.querySelectorAll("[data-hero]").forEach((item) => item.classList.toggle("is-on", item === button));
+          hero.classList.remove("is-fading");
+        }, 220);
       });
     });
 
@@ -253,8 +258,39 @@
     }
   }
 
+  function setupMotion() {
+    const header = document.querySelector(".site-header");
+    const markHeader = () => header && header.classList.toggle("is-scrolled", window.scrollY > 8);
+    markHeader();
+    window.addEventListener("scroll", markHeader, { passive: true });
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const seen = new WeakSet();
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-in");
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.12 });
+
+    window.revealIn = (root = document) => {
+      root.querySelectorAll(".section, .cat-card, .trust p, .pcard, .plant").forEach((node, index) => {
+        if (seen.has(node)) return;
+        seen.add(node);
+        node.classList.add("reveal");
+        if (node.matches(".cat-card, .trust p, .pcard, .plant")) {
+          node.style.transitionDelay = `${Math.min(index, 8) * 50}ms`;
+        }
+        observer.observe(node);
+      });
+    };
+    window.revealIn();
+  }
+
   setupNav();
   setupHome();
+  setupMotion();
   if (!C) return;
   const page = document.body.dataset.page;
   if (page === "home") renderHome();
