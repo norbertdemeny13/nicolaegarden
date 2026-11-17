@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://norbertdemeny13.github.io/nicolaegarden/sitemap.xml

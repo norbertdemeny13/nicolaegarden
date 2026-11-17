@@ -69,10 +69,29 @@
     return cats.find((cat) => cat.parent) || cats[0];
   }
 
+  function root() {
+    return document.body.dataset.root || "";
+  }
+
+  function asset(path) {
+    return `${root()}${String(path || "").replace(/^\//, "")}`;
+  }
+
+  function uniqueByPath(list) {
+    const seen = new Set();
+    return list.filter((product) => {
+      const key = product.path || product.slug;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
   function plantCard(product) {
     const cat = labelFor(product);
-    return `<a class="pcard" href="produs.html?p=${encodeURIComponent(product.slug)}">
-      <img src="${esc(product.image)}" alt="${esc(product.title)}">
+    const href = product.path ? asset(product.path) : `produs.html?p=${encodeURIComponent(product.slug)}`;
+    return `<a class="pcard" href="${href}">
+      <img src="${esc(asset(product.image))}" alt="${esc(product.title)}" loading="lazy" decoding="async">
       <strong>${esc(product.title)}</strong>
       <span class="bar">${esc(cat ? cat.name : "Detalii")}</span>
     </a>`;
@@ -94,7 +113,8 @@
       const tops = C.categoryOrder.map(catBySlug).filter(Boolean);
       cats.innerHTML = tops.map((cat, index) => {
         const count = countFor(cat);
-        return `<a class="cat" href="catalog.html?c=${encodeURIComponent(cat.slug)}">
+        const href = cat.path ? asset(cat.path) : `catalog.html?c=${encodeURIComponent(cat.slug)}`;
+        return `<a class="cat" href="${href}">
           <span class="cat-index">${String(index + 1).padStart(2, "0")}</span>
           <span class="cat-name">${esc(cat.name)}</span>
           <span class="cat-note">${count} plante · ${esc(NOTES[cat.slug] || "")}</span>
@@ -118,16 +138,22 @@
     const grid = $("#catalog-grid");
     if (!grid) return;
     const params = queryParams();
-    const selected = catBySlug(params.get("c") || "");
+    const selected = catBySlug(document.body.dataset.category || params.get("c") || "");
     const parent = topOf(selected);
-    const query = params.get("q") || "";
+    const pretty = Boolean(document.body.dataset.category);
+    const query = pretty ? ($("#search")?.value || "").trim() : (params.get("q") || "");
     const tops = C.categoryOrder.map(catBySlug).filter(Boolean);
 
     const filters = $("#filters");
-    filters.innerHTML = [`<a href="catalog.html${query ? `?q=${encodeURIComponent(query)}` : ""}" class="${selected ? "" : "is-on"}">Toate</a>`]
+    const allHref = pretty || query
+      ? `${asset("catalog.html")}${!pretty && query ? `?q=${encodeURIComponent(query)}` : ""}`
+      : asset("catalog.html");
+    filters.innerHTML = [`<a href="${allHref}" class="${selected ? "" : "is-on"}">Toate</a>`]
       .concat(tops.map((cat) => {
         const on = parent && parent.id === cat.id;
-        const href = `catalog.html?c=${encodeURIComponent(cat.slug)}${query ? `&q=${encodeURIComponent(query)}` : ""}`;
+        const href = cat.path
+          ? asset(cat.path)
+          : `${asset("catalog.html")}?c=${encodeURIComponent(cat.slug)}${!pretty && query ? `&q=${encodeURIComponent(query)}` : ""}`;
         return `<a href="${href}" class="${on ? "is-on" : ""}">${esc(cat.name)} <span>${countFor(cat)}</span></a>`;
       })).join("");
 
@@ -135,15 +161,15 @@
     const kids = parent ? childrenOf(parent.id).filter((cat) => countFor(cat)) : [];
     sub.hidden = kids.length === 0;
     sub.innerHTML = kids.map((cat) => {
-      const href = `catalog.html?c=${encodeURIComponent(cat.slug)}${query ? `&q=${encodeURIComponent(query)}` : ""}`;
+      const href = cat.path ? asset(cat.path) : `${asset("catalog.html")}?c=${encodeURIComponent(cat.slug)}`;
       const on = selected && selected.id === cat.id;
       return `<a class="chip${on ? " is-on" : ""}" href="${href}">${esc(cat.name)} ${countFor(cat)}</a>`;
     }).join("");
 
     const input = $("#search");
-    if (input && input.value !== query) input.value = query;
+    if (input && !pretty && input.value !== query) input.value = query;
 
-    const list = C.products.filter((product) => inCategory(product, selected) && matchesQuery(product, query));
+    const list = uniqueByPath(C.products.filter((product) => inCategory(product, selected) && matchesQuery(product, query)));
     $("#result-count").textContent = `${list.length} ${list.length === 1 ? "plantă" : "plante"}`;
     if (!list.length) {
       grid.innerHTML = "";
@@ -167,8 +193,10 @@
         const value = input.value.trim();
         if (value) next.set("q", value);
         else next.delete("q");
-        const qs = next.toString();
-        history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
+        if (!document.body.dataset.category) {
+          const qs = next.toString();
+          history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
+        }
         renderCatalog();
       }, 120);
     });
@@ -177,27 +205,29 @@
   function renderProduct() {
     const root = $("#product");
     if (!root) return;
-    const slug = queryParams().get("p") || "";
+    const slug = document.body.dataset.product || queryParams().get("p") || "";
     const product = C.products.find((item) => item.slug === slug);
     if (!product) {
-      root.innerHTML = `<div class="empty"><h1>Planta nu este în catalog</h1><p><a href="catalog.html">Înapoi la catalog</a></p></div>`;
+      root.innerHTML = `<div class="empty"><h1>Planta nu este în catalog</h1><p><a href="${asset("catalog.html")}">Înapoi la catalog</a></p></div>`;
       return;
     }
-    document.title = `${product.title} · Nicolae Garden`;
+    document.title = `${product.title} | Nicolae Garden`;
     const cat = labelFor(product);
+    const parent = topOf(cat);
     const paragraphs = product.text.split("\n").filter(Boolean).map((line) => `<p>${esc(line)}</p>`).join("");
-    const crumb = cat
-      ? `<a href="catalog.html?c=${encodeURIComponent(cat.slug)}">${esc(cat.name)}</a>`
-      : `<a href="catalog.html">Catalog</a>`;
+    const crumbs = [`<a href="${asset("index.html")}">Acasă</a>`];
+    if (parent && parent.path) crumbs.push(`<a href="${asset(parent.path)}">${esc(parent.name)}</a>`);
+    if (cat && parent && cat.id !== parent.id && cat.path) crumbs.push(`<a href="${asset(cat.path)}">${esc(cat.name)}</a>`);
+    const crumb = crumbs.join(" / ");
     const photos = (product.images && product.images.length ? product.images : [product.image]).filter(Boolean);
     const thumbs = photos.length > 1
       ? `<div class="product-thumbs">${photos.map((src, index) => (
-        `<button type="button" class="${index === 0 ? "is-on" : ""}" data-photo="${esc(src)}" aria-label="Fotografia ${index + 1}"><img src="${esc(src)}" alt=""></button>`
+        `<button type="button" class="${index === 0 ? "is-on" : ""}" data-photo="${esc(asset(src))}" aria-label="Fotografia ${index + 1}"><img src="${esc(asset(src))}" alt="" loading="lazy" decoding="async"></button>`
       )).join("")}</div>`
       : "";
     root.innerHTML = `
       <figure class="product-photo">
-        <img id="product-main" src="${esc(photos[0])}" alt="${esc(product.title)}">
+        <img id="product-main" src="${esc(asset(photos[0]))}" alt="${esc(product.title)}" fetchpriority="high">
         ${thumbs}
       </figure>
       <article>
@@ -216,9 +246,9 @@
 
     const related = $("#related-grid");
     if (!related || !cat) return;
-    const same = C.products.filter((item) => item.slug !== product.slug && item.categories.includes(cat.id));
-    const more = C.products.filter((item) => item.slug !== product.slug && !same.includes(item) && inCategory(item, topOf(cat)));
-    const others = same.concat(more).slice(0, 4);
+    const same = C.products.filter((item) => item.path !== product.path && item.categories.includes(cat.id));
+    const more = C.products.filter((item) => item.path !== product.path && !same.includes(item) && inCategory(item, topOf(cat)));
+    const others = uniqueByPath(same.concat(more)).slice(0, 4);
     related.innerHTML = others.map(plantCard).join("");
     $("#related").hidden = others.length === 0;
     if (window.revealIn) window.revealIn(related);
@@ -390,9 +420,24 @@
   const page = document.body.dataset.page;
   if (page === "home") renderHome();
   if (page === "catalog") {
+    const params = queryParams();
+    const selected = catBySlug(params.get("c") || "");
+    if (!document.body.dataset.category && selected && selected.path && !params.get("q")) {
+      location.replace(asset(selected.path));
+      return;
+    }
     bindSearch();
     renderCatalog();
   }
-  if (page === "product") renderProduct();
+  if (page === "product") {
+    if (!document.body.dataset.product) {
+      const product = C.products.find((item) => item.slug === queryParams().get("p"));
+      if (product && product.path) {
+        location.replace(asset(product.path));
+        return;
+      }
+    }
+    renderProduct();
+  }
   if (page === "list") renderList();
 })();
