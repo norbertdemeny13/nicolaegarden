@@ -8,6 +8,7 @@
     "plante-ornamentale": "Arbuști decorativi și plante perene.",
     "flori-de-sezon": "Flori de primăvară, vară și toamnă.",
     "brazi-si-conifere": "Brazi, tuia și alte conifere.",
+    "aranjamente": "Aranjamente cu Calluna, conifere și plante ornamentale.",
   };
 
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -188,14 +189,30 @@
     const crumb = cat
       ? `<a href="catalog.html?c=${encodeURIComponent(cat.slug)}">${esc(cat.name)}</a>`
       : `<a href="catalog.html">Catalog</a>`;
+    const photos = (product.images && product.images.length ? product.images : [product.image]).filter(Boolean);
+    const thumbs = photos.length > 1
+      ? `<div class="product-thumbs">${photos.map((src, index) => (
+        `<button type="button" class="${index === 0 ? "is-on" : ""}" data-photo="${esc(src)}" aria-label="Fotografia ${index + 1}"><img src="${esc(src)}" alt=""></button>`
+      )).join("")}</div>`
+      : "";
     root.innerHTML = `
-      <figure class="product-photo"><img src="${esc(product.image)}" alt="${esc(product.title)}"></figure>
+      <figure class="product-photo">
+        <img id="product-main" src="${esc(photos[0])}" alt="${esc(product.title)}">
+        ${thumbs}
+      </figure>
       <article>
         <p class="crumb">${crumb}</p>
         <h1>${esc(product.title)}</h1>
         <div class="body">${paragraphs}</div>
         <p class="note">Disponibil în pepinieră. Prețul se stabilește la fața locului, în Sângeorgiu de Mureș, Corunca sau Cristești.</p>
       </article>`;
+    root.querySelectorAll("[data-photo]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const main = $("#product-main", root);
+        if (main) main.src = button.dataset.photo;
+        root.querySelectorAll("[data-photo]").forEach((item) => item.classList.toggle("is-on", item === button));
+      });
+    });
 
     const related = $("#related-grid");
     if (!related || !cat) return;

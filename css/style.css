@@ -481,7 +481,27 @@ label { font-size: 0.92rem; color: var(--muted); }
   padding: 1.5rem 0 2.5rem;
 }
 .product-photo { border-radius: 18px; overflow: hidden; background: #eef2e6; }
-.product-photo img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+.product-photo > img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+.product-thumbs {
+  display: flex;
+  gap: 0.45rem;
+  padding: 0.7rem;
+  overflow-x: auto;
+  background: #fff;
+}
+.product-thumbs button {
+  flex: 0 0 68px;
+  width: 68px;
+  height: 68px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #eef2e6;
+  cursor: pointer;
+}
+.product-thumbs button.is-on { border-color: var(--green); }
+.product-thumbs img { width: 100%; height: 100%; object-fit: cover; }
 .crumb { color: var(--muted); }
 .crumb a { color: #5d7a32; }
 .product h1 { margin: 0.3rem 0 0.8rem; color: var(--green); font-size: clamp(2.2rem, 4vw, 3.4rem); line-height: 1.05; }
