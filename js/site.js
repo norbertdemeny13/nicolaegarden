@@ -207,6 +207,84 @@
     if (window.revealIn) window.revealIn(related);
   }
 
+  function renderList() {
+    const body = $("#sheet-body");
+    const search = $("#sheet-search");
+    const select = $("#sheet-cat");
+    const count = $("#sheet-count");
+    if (!body || !search || !select || !count) return;
+
+    const tops = C.categories.filter((cat) => !cat.parent && countFor(cat) > 0);
+    select.innerHTML = `<option value="">Toate categoriile</option>${tops.map((cat) => (
+      `<option value="${esc(cat.slug)}">${esc(cat.name)}</option>`
+    )).join("")}`;
+
+    const rows = C.products.map((product) => {
+      const cats = product.categories.map(catById).filter(Boolean);
+      const child = cats.find((cat) => cat.parent) || null;
+      const parent = child ? (catById(child.parent) || child) : (cats[0] || null);
+      return { product, parent, child };
+    });
+
+    let sortKey = "category";
+    let sortDir = 1;
+    const heads = document.querySelectorAll("[data-sort]");
+
+    const draw = () => {
+      const words = fold(search.value).split(/\s+/).filter(Boolean);
+      const cat = catBySlug(select.value);
+      const shown = rows.filter(({ product, parent, child }) => {
+        if (cat && !inCategory(product, cat)) return false;
+        if (!words.length) return true;
+        const hay = fold(`${product.title} ${product.text} ${parent ? parent.name : ""} ${child ? child.name : ""}`);
+        return words.every((word) => hay.includes(word));
+      }).sort((a, b) => {
+        const value = (row) => (
+          sortKey === "category"
+            ? `${row.parent ? row.parent.name : ""} ${row.child ? row.child.name : ""} ${row.product.title}`
+            : row.product.title
+        );
+        return value(a).localeCompare(value(b), "ro") * sortDir;
+      });
+
+      count.textContent = shown.length === C.products.length
+        ? `${shown.length} plante`
+        : `${shown.length} din ${C.products.length} plante`;
+      body.innerHTML = shown.length
+        ? shown.map(({ product, parent, child }, index) => {
+          const blurb = String(product.text || "").replace(/\s+/g, " ").trim();
+          const short = blurb.length > 180 ? `${blurb.slice(0, 177)}…` : blurb;
+          return `<tr>
+            <td class="num">${index + 1}</td>
+            <td class="shot"><img src="${esc(product.image)}" alt=""></td>
+            <td class="name"><a href="produs.html?p=${encodeURIComponent(product.slug)}">${esc(product.title)}</a></td>
+            <td>${esc(parent ? parent.name : "—")}</td>
+            <td>${esc(child ? child.name : "—")}</td>
+            <td class="blurb">${esc(short || "—")}</td>
+          </tr>`;
+        }).join("")
+        : `<tr><td class="blurb" colspan="6">Nicio plantă nu se potrivește.</td></tr>`;
+      heads.forEach((head) => {
+        const active = head.dataset.sort === sortKey;
+        head.setAttribute("aria-sort", active ? (sortDir === 1 ? "ascending" : "descending") : "none");
+      });
+    };
+
+    search.addEventListener("input", draw);
+    select.addEventListener("change", draw);
+    heads.forEach((head) => {
+      head.addEventListener("click", () => {
+        if (sortKey === head.dataset.sort) sortDir *= -1;
+        else {
+          sortKey = head.dataset.sort;
+          sortDir = 1;
+        }
+        draw();
+      });
+    });
+    draw();
+  }
+
   function setupHome() {
     const hero = document.querySelector("#hero-img");
     document.querySelectorAll("[data-hero]").forEach((button) => {
@@ -299,4 +377,5 @@
     renderCatalog();
   }
   if (page === "product") renderProduct();
+  if (page === "list") renderList();
 })();

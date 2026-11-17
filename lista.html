@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Listă plante · Nicolae Garden</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=5">
+</head>
+<body data-page="list">
+  <a class="skip" href="#continut">Sări la conținut</a>
+  <header class="site-header">
+    <a class="brand" href="index.html"><img src="images/logo.jpg" alt="Nicolae Garden"></a>
+    <p class="sheet-label">Listă plante</p>
+    <a class="phone" href="tel:0741763416" aria-label="Sună la 0741763416">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M7 3.5h3.2l1.2 3.6-2 1.2a12 12 0 0 0 6.3 6.3l1.2-2 3.6 1.2V17a2 2 0 0 1-2 2A14.5 14.5 0 0 1 5 6.5a2 2 0 0 1 2-2z"/></svg>
+    </a>
+  </header>
+  <main id="continut">
+    <div class="wrap page-intro">
+      <p class="kicker">Toate plantele</p>
+      <h1>Listă completă</h1>
+      <p>Fiecare plantă din catalog, pe un rând. Prețul se stabilește la pepinieră.</p>
+    </div>
+    <div class="wrap sheet-tools">
+      <input id="sheet-search" type="search" placeholder="Caută după nume sau categorie" aria-label="Caută în listă">
+      <select id="sheet-cat" aria-label="Filtrează după categorie"></select>
+      <p class="sheet-count" id="sheet-count"></p>
+    </div>
+    <div class="wrap sheet-scroll">
+      <table class="sheet">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Foto</th>
+            <th scope="col"><button type="button" data-sort="title">Plantă</button></th>
+            <th scope="col"><button type="button" data-sort="category">Categorie</button></th>
+            <th scope="col">Subcategorie</th>
+            <th scope="col">Descriere</th>
+          </tr>
+        </thead>
+        <tbody id="sheet-body"></tbody>
+      </table>
+    </div>
+  </main>
+  <script src="js/catalog.js?v=3"></script>
+  <script src="js/site.js?v=3"></script>
+</body>
+</html>
